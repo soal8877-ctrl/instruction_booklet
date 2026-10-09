@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const notes = await prisma.note.findMany({
     orderBy: { createdAt: "desc" },
+    include: { author: true, tags: true },
   });
 
   return (
@@ -19,6 +20,12 @@ export default async function HomePage() {
           {notes.map((note) => (
             <li key={note.id}>
               <strong>{note.title}</strong>
+              <span>
+                {note.author.name ?? note.author.email}
+                {note.tags.length > 0
+                  ? ` · ${note.tags.map((tag) => tag.name).join(", ")}`
+                  : ""}
+              </span>
               <time dateTime={note.createdAt.toISOString()}>
                 {note.createdAt.toLocaleString("ru-RU")}
               </time>

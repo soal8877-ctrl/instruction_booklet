@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>view-db</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <h1>view-db</h1>
+        <p id="subtitle">Просмотр и CRUD по таблицам PostgreSQL</p>
+      </header>
+
+      <section id="screen-db" class="screen">
+        <h2>Выберите базу данных</h2>
+        <div class="db-grid" id="db-buttons"></div>
+        <p class="hint">
+          Рабочая: <code>DATABASE_URL</code>, локальная: <code>LOCAL_DATABASE_URL</code> в корневом
+          <code>.env</code>
+        </p>
+      </section>
+
+      <section id="screen-tables" class="screen hidden">
+        <div class="toolbar">
+          <button type="button" id="back-to-db" class="secondary">← К выбору БД</button>
+          <span id="db-label" class="badge"></span>
+        </div>
+        <h2>Таблицы</h2>
+        <ul id="table-list" class="table-list"></ul>
+      </section>
+
+      <section id="screen-rows" class="screen hidden">
+        <div class="toolbar">
+          <button type="button" id="back-to-tables" class="secondary">← К таблицам</button>
+          <span id="table-label" class="badge"></span>
+          <button type="button" id="create-row" class="primary">Создать</button>
+        </div>
+        <div id="error" class="error hidden"></div>
+        <div class="table-wrap">
+          <table id="data-table">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <button type="button" id="prev-page" class="secondary">Назад</button>
+          <span id="page-info"></span>
+          <button type="button" id="next-page" class="secondary">Вперёд</button>
+        </div>
+      </section>
+    </div>
+
+    <dialog id="row-dialog">
+      <form id="row-form" method="dialog">
+        <h3 id="dialog-title">Запись</h3>
+        <div id="form-fields"></div>
+        <div class="dialog-actions">
+          <button type="button" id="cancel-dialog" class="secondary">Отмена</button>
+          <button type="submit" class="primary">Сохранить</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

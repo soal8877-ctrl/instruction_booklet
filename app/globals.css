@@ -46,6 +46,13 @@ li strong {
   margin-bottom: 0.25rem;
 }
 
+li span {
+  display: block;
+  font-size: 0.875rem;
+  color: #374151;
+  margin-bottom: 0.25rem;
+}
+
 li time {
   font-size: 0.875rem;
   color: #6b7280;
