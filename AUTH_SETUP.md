@@ -192,7 +192,7 @@ npm run dev
 
 ## Шаг 6. Деплой на Vercel
 
-В **Project → Settings → Environment Variables** добавьте:
+Нужны те же переменные, что и локально. Для production важно заменить `AUTH_URL` на URL Vercel (не `localhost`).
 
 | Переменная | Значение |
 |------------|----------|
@@ -207,6 +207,86 @@ npm run dev
 `https://ваш-проект.vercel.app/api/auth/callback/google`
 
 Сделайте **Redeploy** после изменения переменных.
+
+### Вариант A — вручную в интерфейсе Vercel
+
+1. Откройте проект на [vercel.com](https://vercel.com).
+2. **Settings** → **Environment Variables**.
+3. Для каждой строки из таблицы выше: **Add** → имя, значение, окружения (**Production**, при необходимости **Preview**).
+4. **Save** → **Deployments** → **Redeploy**.
+
+### Вариант B — вставить содержимое `.env` (массово)
+
+На **странице списка** переменных (как на скриншоте с `DATABASE_URL`) отдельной кнопки **Import** обычно **нет** — это нормально. Импорт или вставка всего файла делается **в форме добавления**.
+
+1. Подготовьте файл (копия локального `.env`):
+
+```powershell
+cd C:\Cursor\instruction_booklet
+Copy-Item .env .env.vercel
+```
+
+2. Откройте `.env.vercel` и оставьте только нужное для Vercel:
+
+   - `AUTH_URL=https://ваш-проект.vercel.app` (не `localhost`, без `/` в конце)
+   - Удалите `LOCAL_DATABASE_URL` и комментарии, если мешают
+   - Нужны: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`  
+   - `DATABASE_URL` у вас уже может быть на Vercel — дубликат при импорте можно не добавлять или обновить значение
+
+3. В Vercel: **Settings** → **Environment Variables** → белая кнопка **Add Environment Variable**.
+
+4. В **открывшейся форме** (не на списке!) ищите один из вариантов интерфейса:
+
+   | Что видите | Что делать |
+   |------------|------------|
+   | Ссылка **Import .env** | Нажмите → выберите `.env.vercel` или вставьте текст |
+   | Подсказка *«Paste a .env above to populate the form»* | Скопируйте **весь** текст `.env.vercel` (Ctrl+A в файле) и вставьте **в большое поле формы** (Ctrl+V) |
+   | Только поля Key / Value | Массовой вставки нет — используйте **вариант A** (по одной переменной) или **вариант C** (CLI) |
+
+5. Выберите окружения: **Production** и **Preview** (для входа на preview-деплоях).
+
+6. Нажмите **Save** / **Add**.
+
+7. **Deployments** → последний деплой → **Redeploy** (переменные подхватываются после пересборки).
+
+Файл `.env.vercel` в Git не коммитьте.
+
+### Вариант C — Vercel CLI из `.env`
+
+Если установлен [Vercel CLI](https://vercel.com/docs/cli):
+
+```powershell
+npm install -g vercel
+cd C:\Cursor\instruction_booklet
+vercel login
+vercel link
+```
+
+Импорт переменных из файла (по одной строке, окружение **production**):
+
+```powershell
+Get-Content .env.vercel | ForEach-Object {
+  $line = $_.Trim()
+  if ($line -eq "" -or $line.StartsWith("#")) { return }
+  $eq = $line.IndexOf("=")
+  if ($eq -lt 1) { return }
+  $name = $line.Substring(0, $eq).Trim()
+  $value = $line.Substring($eq + 1).Trim().Trim('"').Trim("'")
+  if ($name -eq "LOCAL_DATABASE_URL") { return }
+  Write-Host "Добавляем $name ..."
+  $value | vercel env add $name production
+}
+```
+
+Команда `vercel env add` может запросить подтверждение в терминале. Для **Preview** повторите с `preview` вместо `production`, если нужно.
+
+Обратная операция (скачать переменные **с** Vercel в локальный файл):
+
+```powershell
+vercel env pull .env.local
+```
+
+Файл `.env.local` уже в `.gitignore` — в Git не попадёт.
 
 ---
 
