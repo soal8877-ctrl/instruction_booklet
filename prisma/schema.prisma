@@ -7,7 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Пользователь приложения (создаётся при первом входе через Google)
 model User {
   id            String    @id @default(uuid()) @db.Uuid
   email         String    @unique
@@ -20,22 +19,23 @@ model User {
   sessions      Session[]
 }
 
+/// Заметка пользователя (authorId = userId владельца)
 model Note {
-  id        String   @id @default(uuid()) @db.Uuid
-  title     String
-  createdAt DateTime @default(now())
-  authorId  String   @db.Uuid
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  tags      Tag[]
+  id         String   @id @default(uuid()) @db.Uuid
+  title      String
+  content    String   @default("")
+  isPublic   Boolean  @default(false)
+  isFavorite Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  authorId   String   @db.Uuid
+  author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId])
+  @@index([isPublic])
+  @@index([authorId, isFavorite])
 }
 
-model Tag {
-  id    String @id @default(uuid()) @db.Uuid
-  name  String @unique
-  notes Note[]
-}
-
-// Модели Auth.js (OAuth + server-side sessions)
 model Account {
   id                String  @id @default(uuid()) @db.Uuid
   userId            String  @db.Uuid

@@ -18,8 +18,7 @@ export const authConfig: NextAuthConfig = {
       const isLoggedIn = Boolean(auth?.user);
       const path = nextUrl.pathname;
 
-      const isProtected =
-        path.startsWith("/dashboard") || path.startsWith("/my-notes");
+      const isProtected = path.startsWith("/dashboard");
 
       if (isProtected) {
         return isLoggedIn;

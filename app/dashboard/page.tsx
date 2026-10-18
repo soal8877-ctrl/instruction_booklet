@@ -1,27 +1,28 @@
-import Link from "next/link";
 import { requireAuth } from "@/lib/auth-helpers";
-import { SignOutButton } from "@/components/sign-out-button";
+import { listMyNotes } from "@/lib/notes/queries";
+import { parseListParams } from "@/lib/notes/parse-params";
+import { NotesWorkspace } from "@/components/dashboard/notes-workspace";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; page?: string }>;
+}) {
   const session = await requireAuth();
+  const params = parseListParams(await searchParams);
+  const { items, total, pageCount } = await listMyNotes(session.user.id, params);
 
   return (
-    <main>
-      <h1>Личный кабинет</h1>
-      <p className="subtitle">Вы вошли как {session.user.name ?? session.user.email}</p>
-
-      <ul className="nav-links">
-        <li>
-          <Link href="/my-notes">Мои заметки</Link>
-        </li>
-        <li>
-          <Link href="/">Главная</Link>
-        </li>
-      </ul>
-
-      <p className="meta">userId: {session.user.id}</p>
-
-      <SignOutButton />
-    </main>
+    <NotesWorkspace
+      sectionTitle="Мои заметки"
+      notes={items}
+      page={params.page}
+      pageCount={pageCount}
+      total={total}
+      initialQuery={params.query}
+      currentUserId={session.user.id}
+      canCreate
+      showOwnerActions
+    />
   );
 }

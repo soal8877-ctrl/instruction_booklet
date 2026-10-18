@@ -12,32 +12,37 @@ async function main() {
     },
   });
 
-  const tagNames = ["работа", "личное", "идеи"];
-  const tags = await Promise.all(
-    tagNames.map((name) =>
-      prisma.tag.upsert({
-        where: { name },
-        update: {},
-        create: { name },
-      }),
-    ),
-  );
+  const samples = [
+    {
+      title: "Первая заметка",
+      content: "Краткое описание первой заметки для демонстрации списка.",
+      isPublic: true,
+      isFavorite: true,
+    },
+    {
+      title: "Вторая заметка",
+      content: "Приватная заметка только для владельца.",
+      isPublic: false,
+      isFavorite: false,
+    },
+    {
+      title: "Третья заметка",
+      content: "Ещё один пример с текстом превью в карточке.",
+      isPublic: false,
+      isFavorite: true,
+    },
+  ];
 
-  const titles = ["Первая заметка", "Вторая заметка", "Третья заметка"];
-
-  for (const [index, title] of titles.entries()) {
+  for (const sample of samples) {
     const existing = await prisma.note.findFirst({
-      where: { title, authorId: user.id },
+      where: { title: sample.title, authorId: user.id },
     });
     if (existing) continue;
 
     await prisma.note.create({
       data: {
-        title,
+        ...sample,
         authorId: user.id,
-        tags: {
-          connect: [{ id: tags[index % tags.length].id }],
-        },
       },
     });
   }

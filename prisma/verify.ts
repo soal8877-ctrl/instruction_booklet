@@ -15,19 +15,14 @@ async function main() {
   const note = await prisma.note.create({
     data: {
       title: "Тестовая заметка (verify)",
+      content: "Проверка создания заметки с новой схемой.",
       authorId: user.id,
-      tags: {
-        connectOrCreate: {
-          where: { name: "verify" },
-          create: { name: "verify" },
-        },
-      },
+      isPublic: true,
     },
-    include: { author: true, tags: true },
   });
 
   console.log("OK: пользователь и заметка созданы");
-  console.log({ userId: user.id, noteId: note.id, tags: note.tags.map((t) => t.name) });
+  console.log({ userId: user.id, noteId: note.id });
 }
 
 main()

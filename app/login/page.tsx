@@ -1,32 +1,35 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, signIn } from "@/auth";
+import { Button } from "@/components/ui/button";
 
 export default async function LoginPage() {
   const session = await auth();
 
-  // Уже авторизован — в личный кабинет
   if (session?.user) {
     redirect("/dashboard");
   }
 
   return (
-    <main className="auth-page">
-      <h1>Вход</h1>
-      <p className="subtitle">Войдите через Google, чтобы открыть личный кабинет</p>
+    <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-4">
+      <h1 className="text-2xl font-semibold">Вход</h1>
+      <p className="mt-2 text-center text-muted-foreground">
+        Войдите через Google, чтобы открыть личный кабинет
+      </p>
 
       <form
+        className="mt-8 w-full"
         action={async () => {
           "use server";
           await signIn("google", { redirectTo: "/dashboard" });
         }}
       >
-        <button type="submit" className="btn-google">Войти через Google</button>
+        <Button type="submit" className="w-full">Войти через Google</Button>
       </form>
 
-      <p className="auth-footer">
-        <Link href="/">На главную</Link>
-      </p>
+      <Link href="/" className="mt-6 text-sm text-primary underline">
+        На главную
+      </Link>
     </main>
   );
 }
