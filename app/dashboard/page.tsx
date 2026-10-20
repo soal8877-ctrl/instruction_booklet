@@ -23,6 +23,7 @@ export default async function DashboardPage({
       currentUserId={session.user.id}
       canCreate
       showOwnerActions
+      showLikes
     />
   );
 }

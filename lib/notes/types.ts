@@ -6,7 +6,9 @@ export type NoteWithAuthor = Note & {
   author?: { id: string; name: string | null; email: string };
 };
 
-export type PublicNoteListItem = NoteWithAuthor & {
+export type NoteWithLikes = {
   likesCount: number;
   likedByMe: boolean;
 };
+
+export type PublicNoteListItem = NoteWithAuthor & NoteWithLikes;

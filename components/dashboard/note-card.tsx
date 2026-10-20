@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Note } from "@prisma/client";
 import {
@@ -42,21 +42,33 @@ export function NoteCard({
 }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [isPublic, setIsPublic] = useState(note.isPublic);
+  const [isFavorite, setIsFavorite] = useState(note.isFavorite);
   const isOwner = note.authorId === currentUserId;
+
+  useEffect(() => {
+    setIsPublic(note.isPublic);
+    setIsFavorite(note.isFavorite);
+  }, [note.id, note.isPublic, note.isFavorite]);
 
   const preview =
     note.content.trim() ||
     "Нет описания — добавьте текст заметки при редактировании.";
 
-  function run(action: () => Promise<unknown>) {
+  function run(action: () => Promise<unknown>, rollback?: () => void) {
     startTransition(async () => {
-      await action();
-      router.refresh();
+      try {
+        await action();
+        router.refresh();
+      } catch {
+        rollback?.();
+      }
     });
   }
 
   return (
     <article
+      key={note.id}
       className={cn(
         "flex gap-4 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm transition-shadow hover:shadow-md",
         pending && "opacity-70",
@@ -77,7 +89,7 @@ export function NoteCard({
       </div>
 
       <div className="flex shrink-0 items-start gap-1">
-        {showLike && note.isPublic && (
+        {showLike && isPublic && (
           <LikeButton
             noteId={note.id}
             initialLiked={likedByMe}
@@ -90,11 +102,15 @@ export function NoteCard({
             type="button"
             variant="ghost"
             size="icon"
-            className={cn(note.isFavorite && "text-amber-500")}
+            className={cn(isFavorite && "text-amber-500")}
             title="Избранное"
-            onClick={() => run(() => toggleNoteFavorite(note.id))}
+            onClick={() => {
+              const prev = isFavorite;
+              setIsFavorite(!prev);
+              run(() => toggleNoteFavorite(note.id), () => setIsFavorite(prev));
+            }}
           >
-            <Star className={cn("h-4 w-4", note.isFavorite && "fill-current")} />
+            <Star className={cn("h-4 w-4", isFavorite && "fill-current")} />
           </Button>
         )}
 
@@ -104,10 +120,14 @@ export function NoteCard({
               type="button"
               variant="ghost"
               size="icon"
-              title={note.isPublic ? "Сделать приватной" : "Сделать публичной"}
-              onClick={() => run(() => toggleNotePublic(note.id))}
+              title={isPublic ? "Сделать приватной" : "Сделать публичной"}
+              onClick={() => {
+                const prev = isPublic;
+                setIsPublic(!prev);
+                run(() => toggleNotePublic(note.id), () => setIsPublic(prev));
+              }}
             >
-              {note.isPublic ? (
+              {isPublic ? (
                 <Globe className="h-4 w-4 text-emerald-600" />
               ) : (
                 <Lock className="h-4 w-4 text-slate-500" />

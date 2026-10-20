@@ -10,6 +10,30 @@ type ListParams = {
   sort?: NoteSort;
 };
 
+async function attachLikeMeta<T extends { id: string; _count: { likes: number } }>(
+  userId: string,
+  rows: T[],
+) {
+  const noteIds = rows.map((row) => row.id);
+  const myLikes =
+    noteIds.length === 0
+      ? []
+      : await prisma.like.findMany({
+          where: { userId, noteId: { in: noteIds } },
+          select: { noteId: true },
+        });
+  const likedSet = new Set(myLikes.map((like) => like.noteId));
+
+  return rows.map((row) => {
+    const { _count, ...note } = row;
+    return {
+      ...note,
+      likesCount: _count.likes,
+      likedByMe: likedSet.has(row.id),
+    };
+  });
+}
+
 function searchFilter(query?: string) {
   if (!query?.trim()) return undefined;
   const q = query.trim();
@@ -27,15 +51,19 @@ export async function listMyNotes(userId: string, { page, query }: ListParams) {
     ...(searchFilter(query) ?? {}),
   };
 
-  const [items, total] = await Promise.all([
+  const [rows, total] = await Promise.all([
     prisma.note.findMany({
       where,
-      orderBy: { updatedAt: "desc" },
+      // createdAt: порядок карточек не «прыгает» при toggle public/favorite (updatedAt меняется)
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       skip: (page - 1) * NOTES_PAGE_SIZE,
       take: NOTES_PAGE_SIZE,
+      include: { _count: { select: { likes: true } } },
     }),
     prisma.note.count({ where }),
   ]);
+
+  const items = await attachLikeMeta(userId, rows);
 
   return {
     items,
@@ -51,15 +79,18 @@ export async function listFavoriteNotes(userId: string, { page, query }: ListPar
     ...(searchFilter(query) ?? {}),
   };
 
-  const [items, total] = await Promise.all([
+  const [rows, total] = await Promise.all([
     prisma.note.findMany({
       where,
-      orderBy: { updatedAt: "desc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       skip: (page - 1) * NOTES_PAGE_SIZE,
       take: NOTES_PAGE_SIZE,
+      include: { _count: { select: { likes: true } } },
     }),
     prisma.note.count({ where }),
   ]);
+
+  const items = await attachLikeMeta(userId, rows);
 
   return {
     items,
@@ -96,24 +127,7 @@ export async function listPublicNotes(
     prisma.note.count({ where }),
   ]);
 
-  const noteIds = rows.map((row) => row.id);
-  const myLikes =
-    noteIds.length === 0
-      ? []
-      : await prisma.like.findMany({
-          where: { userId, noteId: { in: noteIds } },
-          select: { noteId: true },
-        });
-  const likedSet = new Set(myLikes.map((like) => like.noteId));
-
-  const items: PublicNoteListItem[] = rows.map((row) => {
-    const { _count, ...note } = row;
-    return {
-      ...note,
-      likesCount: _count.likes,
-      likedByMe: likedSet.has(row.id),
-    };
-  });
+  const items = (await attachLikeMeta(userId, rows)) as PublicNoteListItem[];
 
   return {
     items,
