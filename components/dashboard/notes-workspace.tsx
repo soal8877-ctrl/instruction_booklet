@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Note } from "@prisma/client";
 import { Loader2, Plus, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -50,6 +50,7 @@ export function NotesWorkspace({
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [query, setQuery] = useState(initialQuery);
   const [sort, setSort] = useState<NoteSort>(initialSort);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -64,7 +65,14 @@ export function NotesWorkspace({
     setSort(initialSort);
   }, [initialSort]);
 
+  // Обновляем URL только если поиск/сортировка реально изменились (без лишних запросов к БД)
   useEffect(() => {
+    const urlQ = searchParams.get("q") ?? "";
+    const urlSort = searchParams.get("sort") === "popular" ? "popular" : "recent";
+    if (query.trim() === urlQ && sort === urlSort) {
+      return;
+    }
+
     const timer = setTimeout(() => {
       const qs = buildQueryString(query, 1, sort);
       startTransition(() => {
@@ -72,7 +80,7 @@ export function NotesWorkspace({
       });
     }, 350);
     return () => clearTimeout(timer);
-  }, [query, sort, pathname, router]);
+  }, [query, sort, pathname, router, searchParams]);
 
   function goToPage(next: number) {
     const qs = buildQueryString(query, next, sort);
