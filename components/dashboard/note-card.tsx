@@ -18,20 +18,28 @@ import {
   toggleNoteFavorite,
   toggleNotePublic,
 } from "@/lib/actions/notes";
-
-type NoteWithAuthor = Note & {
-  author?: { id: string; name: string | null; email: string };
-};
+import { LikeButton } from "@/components/dashboard/like-button";
+import type { NoteWithAuthor } from "@/lib/notes/types";
 
 type Props = {
   note: NoteWithAuthor;
   currentUserId: string;
-  /** Показывать кнопки владельца (редактирование, удаление) */
   showOwnerActions: boolean;
+  showLike?: boolean;
+  likesCount?: number;
+  likedByMe?: boolean;
   onEdit: (note: Note) => void;
 };
 
-export function NoteCard({ note, currentUserId, showOwnerActions, onEdit }: Props) {
+export function NoteCard({
+  note,
+  currentUserId,
+  showOwnerActions,
+  showLike = false,
+  likesCount = 0,
+  likedByMe = false,
+  onEdit,
+}: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const isOwner = note.authorId === currentUserId;
@@ -69,6 +77,14 @@ export function NoteCard({ note, currentUserId, showOwnerActions, onEdit }: Prop
       </div>
 
       <div className="flex shrink-0 items-start gap-1">
+        {showLike && note.isPublic && (
+          <LikeButton
+            noteId={note.id}
+            initialLiked={likedByMe}
+            initialCount={likesCount}
+          />
+        )}
+
         {isOwner && (
           <Button
             type="button"

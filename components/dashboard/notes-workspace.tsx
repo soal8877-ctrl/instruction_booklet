@@ -8,22 +8,31 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { NoteCard } from "@/components/dashboard/note-card";
 import { NoteDialog } from "@/components/dashboard/note-dialog";
-
-type NoteWithAuthor = Note & {
-  author?: { id: string; name: string | null; email: string };
-};
+import type { NoteSort, NoteWithAuthor, PublicNoteListItem } from "@/lib/notes/types";
 
 type Props = {
   sectionTitle: string;
-  notes: NoteWithAuthor[];
+  notes: NoteWithAuthor[] | PublicNoteListItem[];
   page: number;
   pageCount: number;
   total: number;
   initialQuery: string;
+  initialSort?: NoteSort;
   currentUserId: string;
   canCreate: boolean;
   showOwnerActions: boolean;
+  showLikes?: boolean;
+  showSort?: boolean;
 };
+
+function buildQueryString(query: string, page: number, sort: NoteSort) {
+  const params = new URLSearchParams();
+  if (query.trim()) params.set("q", query.trim());
+  if (page > 1) params.set("page", String(page));
+  if (sort === "popular") params.set("sort", "popular");
+  const qs = params.toString();
+  return qs;
+}
 
 export function NotesWorkspace({
   sectionTitle,
@@ -32,13 +41,17 @@ export function NotesWorkspace({
   pageCount,
   total,
   initialQuery,
+  initialSort = "recent",
   currentUserId,
   canCreate,
   showOwnerActions,
+  showLikes = false,
+  showSort = false,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const [query, setQuery] = useState(initialQuery);
+  const [sort, setSort] = useState<NoteSort>(initialSort);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -48,22 +61,27 @@ export function NotesWorkspace({
   }, [initialQuery]);
 
   useEffect(() => {
+    setSort(initialSort);
+  }, [initialSort]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
-      const params = new URLSearchParams();
-      if (query.trim()) params.set("q", query.trim());
-      const qs = params.toString();
+      const qs = buildQueryString(query, 1, sort);
       startTransition(() => {
         router.replace(qs ? `${pathname}?${qs}` : pathname);
       });
     }, 350);
     return () => clearTimeout(timer);
-  }, [query, pathname, router]);
+  }, [query, sort, pathname, router]);
 
   function goToPage(next: number) {
-    const params = new URLSearchParams();
-    if (query.trim()) params.set("q", query.trim());
-    if (next > 1) params.set("page", String(next));
-    const qs = params.toString();
+    const qs = buildQueryString(query, next, sort);
+    router.push(qs ? `${pathname}?${qs}` : pathname);
+  }
+
+  function changeSort(next: NoteSort) {
+    setSort(next);
+    const qs = buildQueryString(query, 1, next);
     router.push(qs ? `${pathname}?${qs}` : pathname);
   }
 
@@ -95,6 +113,26 @@ export function NotesWorkspace({
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
+          {showSort && (
+            <div className="flex rounded-lg border border-slate-200 p-0.5">
+              <Button
+                type="button"
+                size="sm"
+                variant={sort === "recent" ? "default" : "ghost"}
+                onClick={() => changeSort("recent")}
+              >
+                По дате
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={sort === "popular" ? "default" : "ghost"}
+                onClick={() => changeSort("popular")}
+              >
+                По популярности
+              </Button>
+            </div>
+          )}
           {canCreate && (
             <Button type="button" onClick={openCreate}>
               <Plus className="h-4 w-4" />
@@ -120,16 +158,22 @@ export function NotesWorkspace({
           </div>
         ) : (
           <ul className="flex flex-col gap-3">
-            {notes.map((note) => (
-              <li key={note.id}>
-                <NoteCard
-                  note={note}
-                  currentUserId={currentUserId}
-                  showOwnerActions={showOwnerActions}
-                  onEdit={openEdit}
-                />
-              </li>
-            ))}
+            {notes.map((note) => {
+              const publicMeta = note as PublicNoteListItem;
+              return (
+                <li key={note.id}>
+                  <NoteCard
+                    note={note}
+                    currentUserId={currentUserId}
+                    showOwnerActions={showOwnerActions}
+                    showLike={showLikes}
+                    likesCount={publicMeta.likesCount ?? 0}
+                    likedByMe={publicMeta.likedByMe ?? false}
+                    onEdit={openEdit}
+                  />
+                </li>
+              );
+            })}
           </ul>
         )}
 

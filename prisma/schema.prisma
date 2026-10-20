@@ -15,6 +15,7 @@ model User {
   emailVerified DateTime?
   createdAt     DateTime  @default(now())
   notes         Note[]
+  likes         Like[]
   accounts      Account[]
   sessions      Session[]
 }
@@ -30,10 +31,24 @@ model Note {
   updatedAt  DateTime @updatedAt
   authorId   String   @db.Uuid
   author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes      Like[]
 
   @@index([authorId])
   @@index([isPublic])
   @@index([authorId, isFavorite])
+}
+
+/// Лайк публичной заметки (1 пользователь — 1 лайк на заметку)
+model Like {
+  id        String   @id @default(cuid())
+  userId    String   @db.Uuid
+  noteId    String   @db.Uuid
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, noteId])
+  @@index([noteId])
 }
 
 model Account {
