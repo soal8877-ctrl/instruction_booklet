@@ -9,6 +9,8 @@ const DASHBOARD_PATHS = [
   "/dashboard",
   "/dashboard/public",
   "/dashboard/favorites",
+  "/",
+  "/catalog",
 ];
 
 function revalidateDashboard() {
